@@ -4,46 +4,111 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>とわなにか — お金のこと</title>
-<meta name="description" content="今週の金利のひとことと、レポート・選び方・解説への入口。">
+<meta name="description" content="今週の金利が高いか安いか、これから上がるか下がるか、今週やることを一目で。">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <meta name="apple-mobile-web-app-title" content="とわなにか">
 <meta name="theme-color" content="#93704b">
 <style>
-  :root { --bg:#f5f1e9; --surface:#fbf9f4; --border:#e2dac8; --text:#2b2924; --muted:#8a8271; --wood:#93704b; --wood-soft:#ece1d0; }
+  :root { --bg:#f5f1e9; --surface:#fbf9f4; --border:#e2dac8; --text:#2b2924; --muted:#8a8271;
+          --wood:#93704b; --wood-soft:#ece1d0; --sage:#74886d; --red:#b5583f; --blue:#5b7a99; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#1c1a16; --surface:#242119; --border:#38332a; --text:#ede8dd; --muted:#a89e8a; --wood:#c99f74; --wood-soft:#382d20; }
+    :root { --bg:#1c1a16; --surface:#242119; --border:#38332a; --text:#ede8dd; --muted:#a89e8a;
+            --wood:#c99f74; --wood-soft:#382d20; --sage:#9db394; --red:#e08b70; --blue:#8fb0cf; }
   }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Apple SD Gothic Neo",sans-serif; }
-  main { max-width:480px; min-height:100vh; margin:0 auto; padding:48px 16px 32px; display:flex; flex-direction:column; }
-  .brand { color:var(--wood); font-size:14px; letter-spacing:.1em; margin:0; }
-  .week { color:var(--muted); font-size:14px; margin:40px 0 8px; }
-  .word { font-size:30px; font-weight:700; line-height:1.45; margin:0; }
-  nav { margin-top:auto; padding-top:48px; display:grid; gap:12px; }
-  nav a { display:flex; justify-content:space-between; align-items:center; text-decoration:none; color:var(--text);
-          background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px 20px; font-size:18px; font-weight:600; }
-  nav a span { color:var(--wood); }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Apple SD Gothic Neo",sans-serif; }
+  main { max-width:480px; margin:0 auto; padding:28px 16px 32px; }
+  .top { display:flex; justify-content:space-between; align-items:baseline; }
+  .brand { color:var(--wood); font-size:14px; letter-spacing:.1em; font-weight:600; }
+  .date { color:var(--muted); font-size:13px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:18px; margin-top:14px; }
+  .label { color:var(--muted); font-size:13px; margin:0 0 10px; }
+
+  .gauge { position:relative; height:14px; border-radius:999px;
+           background:linear-gradient(90deg, var(--blue), var(--sage) 50%, var(--red)); }
+  .pin { position:absolute; top:50%; width:28px; height:28px; margin:-14px 0 0 -14px; border-radius:50%;
+         background:var(--surface); border:4px solid var(--text); box-shadow:0 2px 6px rgba(0,0,0,.2); }
+  .scale { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:8px; }
+  .verdict { font-size:34px; font-weight:800; margin:12px 0 0; }
+  .verdict small { font-size:15px; font-weight:500; color:var(--muted); margin-left:6px; }
+
+  .trend { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .t { background:var(--bg); border-radius:14px; padding:12px; text-align:center; }
+  .t svg { width:56px; height:56px; display:block; margin:0 auto 4px; }
+  .t .when { font-size:13px; color:var(--muted); }
+  .t .what { font-size:17px; font-weight:700; }
+  .up { color:var(--red); } .down { color:var(--blue); } .flat { color:var(--sage); }
+
+  .todo { display:grid; gap:8px; }
+  .do { display:flex; align-items:center; gap:12px; font-size:16px; font-weight:600; }
+  .do i { flex:none; width:36px; height:36px; border-radius:50%; display:grid; place-items:center;
+          background:var(--wood-soft); color:var(--wood); font-style:normal; font-weight:800; }
+
+  nav { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
+  nav a { display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none; color:var(--text);
+          background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:14px 6px; font-size:13px; font-weight:600; }
+  nav a svg { width:28px; height:28px; stroke:var(--wood); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   nav a.main { background:var(--wood); border-color:var(--wood); color:var(--surface); }
-  nav a.main span { color:var(--surface); }
-  footer { color:var(--muted); font-size:12px; margin-top:24px; text-align:center; }
+  nav a.main svg { stroke:var(--surface); }
+  footer { color:var(--muted); font-size:12px; margin-top:18px; text-align:center; }
 </style>
 </head>
 <body>
 <main>
-  <p class="brand">とわなにか</p>
+  <div class="top"><span class="brand">とわなにか</span><span class="date" id="date"></span></div>
 
-  <p class="week"><!--DATE-->2026年10月9日<!--/DATE--> のひとこと</p>
-  <p class="word"><!--WORD-->金利は高め。<br>しばらく下がらない。<!--/WORD--></p>
+  <section class="card">
+    <p class="label">いまの金利</p>
+    <div class="gauge"><div class="pin" id="pin"></div></div>
+    <div class="scale"><span>安い</span><span>ふつう</span><span>高い</span></div>
+    <p class="verdict" id="verdict"></p>
+  </section>
+
+  <section class="card">
+    <p class="label">これから</p>
+    <div class="trend" id="trend"></div>
+  </section>
+
+  <section class="card">
+    <p class="label">あなたがやること</p>
+    <div class="todo" id="todo"></div>
+  </section>
 
   <nav>
-    <a class="main" href="report.html">今週のレポート <span>→</span></a>
-    <a href="choices.html">お金の置き場所 <span>→</span></a>
-    <a href="video.html">金利のしくみ <span>→</span></a>
+    <a class="main" href="report.html"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M9 11h6M9 15h6"/></svg>レポート</a>
+    <a href="choices.html"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12h2M3 9h18"/></svg>置き場所</a>
+    <a href="video.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>しくみ</a>
   </nav>
 
   <footer>毎週土曜の朝に更新</footer>
 </main>
+
+<script>
+// ▼ 毎週ここだけ書き換える（level: 0=安い 50=ふつう 100=高い / dir: up, flat, down）
+var W = {
+  date: "2026年10月9日",
+  level: 75,
+  verdict: "高め",
+  near: { when: "1年", dir: "up", what: "少し上がる" },
+  far:  { when: "2〜3年", dir: "down", what: "少し下がる" },
+  todo: ["バチモクは返さない", "預金は1〜2年の定期", "株は毎月少しずつ"]
+};
+// ▲
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  $("date").textContent = W.date;
+  $("pin").style.left = Math.max(4, Math.min(96, W.level)) + "%";
+  $("verdict").innerHTML = W.verdict + "<small>" + (W.level >= 60 ? "預ける人に有利" : W.level <= 40 ? "借りる人に有利" : "どちらでもない") + "</small>";
+  var path = { up: "M8 40 L40 12 M24 12 H40 V28", down: "M8 16 L40 44 M24 44 H40 V28", flat: "M8 28 H44 M32 18 L44 28 L32 38" };
+  $("trend").innerHTML = [W.near, W.far].map(function (t) {
+    return '<div class="t ' + t.dir + '"><svg viewBox="0 0 52 56" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="' + path[t.dir] + '"/></svg>' +
+      '<div class="when">' + t.when + '</div><div class="what">' + t.what + '</div></div>';
+  }).join("");
+  $("todo").innerHTML = W.todo.map(function (s, i) { return '<div class="do"><i>' + (i + 1) + '</i>' + s + '</div>'; }).join("");
+})();
+</script>
 </body>
 </html>
