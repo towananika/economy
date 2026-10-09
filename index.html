@@ -35,6 +35,27 @@
   .verdict { font-size:34px; font-weight:800; margin:12px 0 0; }
   .verdict small { font-size:15px; font-weight:500; color:var(--muted); margin-left:6px; }
 
+  .rates { display:grid; gap:18px; }
+  .r-head { display:flex; align-items:baseline; gap:8px; }
+  .r-name { font-size:15px; font-weight:700; }
+  .r-kind { font-size:12px; color:var(--muted); }
+  .r-now { margin-left:auto; font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .r-tag { font-size:12px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--wood-soft); }
+  .r-bar { position:relative; height:8px; border-radius:999px; margin:12px 0 6px;
+           background:linear-gradient(90deg, var(--blue), var(--sage) 50%, var(--red)); }
+  .r-bar .pin { width:20px; height:20px; margin:-10px 0 0 -10px; border-width:3px; }
+  .r-bar.has-mark { margin-top:30px; }
+  .r-mark { position:absolute; top:-6px; width:2px; height:20px; margin-left:-1px; background:var(--text); opacity:.6; }
+  .r-mark span { position:absolute; top:-18px; left:50%; transform:translateX(-50%); white-space:nowrap; font-size:11px; color:var(--muted); }
+  .r-ends { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .note { font-size:12px; color:var(--muted); margin:14px 0 0; }
+  .mix { display:flex; align-items:center; gap:16px; }
+  .mix svg { flex:none; width:128px; height:128px; transform:rotate(-90deg); }
+  .legend { display:grid; gap:8px; flex:1; }
+  .lg { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .lg b { margin-left:auto; font-size:17px; font-variant-numeric:tabular-nums; }
+  .lg i { width:12px; height:12px; border-radius:3px; flex:none; }
+  .lg small { display:block; font-size:11px; color:var(--muted); }
   .trend { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .t { background:var(--bg); border-radius:14px; padding:12px; text-align:center; }
   .t svg { width:56px; height:56px; display:block; margin:0 auto 4px; }
@@ -68,8 +89,20 @@
   </section>
 
   <section class="card">
+    <p class="label">国ごとの金利（過去20年の最低〜最高）</p>
+    <div class="rates" id="rates"></div>
+    <p class="note">政策金利（中央銀行が決める金利）。ピンが今の位置です。</p>
+  </section>
+
+  <section class="card">
     <p class="label">これから</p>
     <div class="trend" id="trend"></div>
+  </section>
+
+  <section class="card">
+    <p class="label">おすすめの配分</p>
+    <div class="mix"><svg viewBox="0 0 42 42" id="donut"></svg><div class="legend" id="legend"></div></div>
+    <p class="note" id="mixnote"></p>
   </section>
 
   <section class="card">
@@ -87,14 +120,26 @@
 </main>
 
 <script>
-// ▼ 毎週ここだけ書き換える（level: 0=安い 50=ふつう 100=高い / dir: up, flat, down）
+// ▼ 毎週ここだけ書き換える（level: 0=安い 50=ふつう 100=高い / dir: up, flat, down / rates: 今・20年の最低と最高と年）
 var W = {
   date: "2026年10月9日",
   level: 75,
   verdict: "高め",
   near: { when: "1年", dir: "up", what: "少し上がる" },
   far:  { when: "2〜3年", dir: "down", what: "少し下がる" },
-  todo: ["バチモクは返さない", "預金は1〜2年の定期", "株は毎月少しずつ"]
+  todo: ["バチモクは返さない", "預金は1〜2年の定期", "株は毎月少しずつ"],
+  mix: [
+    { name: "ウォン預金", sub: "積立・定期・生活費6か月", pct: 55, color: "var(--sage)" },
+    { name: "米国株", sub: "S&P500のETF", pct: 40, color: "var(--wood)" },
+    { name: "ビットコイン", sub: "なくなってもいい額", pct: 5, color: "var(--red)" }
+  ],
+  mixNote: "債券の代わりに定期預金で。毎月の積立もこの割合で、年に1回ずれを戻します。",
+  rates: [
+    { name: "韓国", kind: "基準金利", now: 3.00, low: 0.5, lowY: 2020, high: 5.25, highY: 2008, mark: { at: 2.5, text: "バチモク 2.5%" } },
+    { name: "米国", kind: "FF金利", now: 3.88, low: 0.1, lowY: 2021, high: 5.33, highY: 2023 },
+    { name: "ユーロ", kind: "預金金利", now: 2.50, low: -0.5, lowY: 2019, high: 4.0, highY: 2023 },
+    { name: "日本", kind: "政策金利", now: 1.25, low: -0.1, lowY: 2016, high: 1.25, highY: 2026 }
+  ]
 };
 // ▲
 (function () {
@@ -102,6 +147,26 @@ var W = {
   $("date").textContent = W.date;
   $("pin").style.left = Math.max(4, Math.min(96, W.level)) + "%";
   $("verdict").innerHTML = W.verdict + "<small>" + (W.level >= 60 ? "預ける人に有利" : W.level <= 40 ? "借りる人に有利" : "どちらでもない") + "</small>";
+  var pct = function (r, v) { return Math.max(3, Math.min(97, (v - r.low) / (r.high - r.low) * 100)); };
+  var f = function (v) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(2).replace(/0$/, "") + "%"; };
+  $("rates").innerHTML = W.rates.map(function (r) {
+    var p = (r.now - r.low) / (r.high - r.low) * 100;
+    var tag = p >= 65 ? ["高い", "up"] : p <= 35 ? ["低い", "down"] : ["ふつう", "flat"];
+    return '<div><div class="r-head"><span class="r-name">' + r.name + '</span><span class="r-kind">' + r.kind + '</span>' +
+      '<span class="r-tag ' + tag[1] + '">' + tag[0] + '</span><span class="r-now">' + f(r.now) + '</span></div>' +
+      '<div class="r-bar' + (r.mark ? ' has-mark' : '') + '">' + (r.mark ? '<div class="r-mark" style="left:' + pct(r, r.mark.at) + '%"><span>' + r.mark.text + '</span></div>' : '') +
+      '<div class="pin" style="left:' + pct(r, r.now) + '%"></div></div>' +
+      '<div class="r-ends"><span>最低 ' + f(r.low) + '（' + r.lowY + '）</span><span>最高 ' + f(r.high) + '（' + r.highY + '）</span></div></div>';
+  }).join("");
+  var off = 0, R = 15.915;
+  $("donut").innerHTML = '<circle cx="21" cy="21" r="' + R + '" fill="none" stroke="var(--border)" stroke-width="7"/>' + W.mix.map(function (m) {
+    var c = '<circle cx="21" cy="21" r="' + R + '" fill="none" stroke="' + m.color + '" stroke-width="7" stroke-dasharray="' + (m.pct - 0.6) + ' ' + (100 - m.pct + 0.6) + '" stroke-dashoffset="' + (-off) + '"/>';
+    off += m.pct; return c;
+  }).join("");
+  $("legend").innerHTML = W.mix.map(function (m) {
+    return '<div class="lg"><i style="background:' + m.color + '"></i><span>' + m.name + '<small>' + m.sub + '</small></span><b>' + m.pct + '%</b></div>';
+  }).join("");
+  $("mixnote").textContent = W.mixNote;
   var path = { up: "M8 40 L40 12 M24 12 H40 V28", down: "M8 16 L40 44 M24 44 H40 V28", flat: "M8 28 H44 M32 18 L44 28 L32 38" };
   $("trend").innerHTML = [W.near, W.far].map(function (t) {
     return '<div class="t ' + t.dir + '"><svg viewBox="0 0 52 56" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="' + path[t.dir] + '"/></svg>' +
